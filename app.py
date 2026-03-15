@@ -1,80 +1,88 @@
-
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-# Configurare pagină pentru mobil
-st.set_page_config(page_title="Pro Finance Manager", page_icon="📈", layout="wide")
+st.set_page_config(page_title="Personal Finance Pro", page_icon="🏦", layout="wide")
 
-# Stil vizual personalizat (CSS)
-st.markdown("""
-    <style>
-    .main { background-color: #f5f7f9; }
-    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    </style>
-    """, unsafe_allow_html=True)
+st.title("🏦 Analiză Financiară Detaliată")
 
-st.title("📊 Control Financiar Detaliat")
-
-# --- DATE DE INTRARE (LUNA CURENTĂ) ---
+# --- SIDEBAR PENTRU INTRODUCERE DATE ---
 with st.sidebar:
-    st.header("⚙️ Introducere Date")
-    luna_selectata = st.selectbox("Luna", ["Ianuarie", "Februarie", "Martie", "Aprilie", "Mai", "Iunie"])
-    venit_realizat = st.number_input("Venit Realizat (RON)", min_value=0, value=6500)
+    st.header("📥 Introducere Date")
     
-    st.subheader("Cheltuieli Detaliate")
-    c_fixe = st.number_input("Fixe (Chirie, Utilități)", value=2200)
-    c_variabile = st.number_input("Variabile (Mâncare, Shopping)", value=1800)
-    datorii_rate = st.number_input("Datorii / Rate", value=700)
+    with st.expander("💰 VENITURI (Detaliat)", expanded=True):
+        v_salariu = st.number_input("Salariu Net", value=5000)
+        v_bonus = st.number_input("Bonusuri / Prime", value=0)
+        v_extra = st.number_input("Alte surse (Freelance, chirii)", value=0)
+        total_venit = v_salariu + v_bonus + v_extra
 
-# --- CALCULE ---
-total_cheltuieli = c_fixe + c_variabile + datorii_rate
-disponibil = venit_realizat - total_cheltuieli
-economii_rata = (disponibil / venit_realizat * 100) if venit_realizat > 0 else 0
+    with st.expander("🛒 CHELTUIELI (Detaliat)", expanded=True):
+        st.subheader("Necesități (Fixe)")
+        c_chirie = st.number_input("Chirie / Rată Casă", value=1500)
+        c_utilitati = st.number_input("Utilități (Gaz, curent, net)", value=500)
+        c_supermarket = st.number_input("Supermarket / Mâncare", value=1200)
+        
+        st.subheader("Stil de viață (Variabile)")
+        c_oras = st.number_input("Ieșiri în oraș / Restaurante", value=400)
+        c_transport = st.number_input("Transport / Benzină", value=300)
+        c_sanatate = st.number_input("Sănătate / Îngrijire", value=150)
+        c_haine = st.number_input("Haine / Shopping", value=200)
+        
+        st.subheader("Obligații")
+        c_datorii = st.number_input("Rate bănci / Credite", value=400)
+        c_abonamente = st.number_input("Abonamente (Netflix, Gym)", value=100)
+
+    total_cheltuieli = (c_chirie + c_utilitati + c_supermarket + 
+                        c_oras + c_transport + c_sanatate + 
+                        c_haine + c_datorii + c_abonamente)
+    
+    disponibil = total_venit - total_cheltuieli
 
 # --- DASHBOARD PRINCIPAL ---
-st.subheader(f"Rezumat {luna_selectata}")
-col1, col2, col3, col4 = st.columns(4)
-
-# Comparăm simulat cu luna trecută (ex: 5% mai bine)
-col1.metric("Venit Total", f"{venit_realizat} RON", "+5%")
-col2.metric("Total Cheltuit", f"{total_cheltuieli} RON", "-2%", delta_color="inverse")
-col3.metric("Disponibil (Cash)", f"{disponibil} RON", "120 RON")
-col4.metric("Rată Economisire", f"{economii_rata:.1f}%", "2.1%")
+col1, col2, col3 = st.columns(3)
+col1.metric("Venit Total", f"{total_venit} RON")
+col2.metric("Cheltuieli Totale", f"{total_cheltuieli} RON", delta=f"{(total_cheltuieli/total_venit*100):.1f}% din venit", delta_color="inverse")
+col3.metric("Economii (Disponibil)", f"{disponibil} RON", delta=f"{disponibil} RON", delta_color="normal")
 
 st.divider()
 
-# --- ANALIZĂ DETALIATĂ ---
-c_stanga, c_dreapta = st.columns([1, 1])
+# --- GRAFICE ANALITICE ---
+tab1, tab2 = st.tabs(["📊 Analiză Cheltuieli", "📈 Evoluție & Comparare"])
 
-with c_stanga:
-    st.write("### 🥧 Distribuția Bugetului")
-    fig_pie = go.Figure(data=[go.Pie(
-        labels=['Cheltuieli Fixe', 'Variabile', 'Datorii', 'Economii'],
-        values=[c_fixe, c_variabile, datorii_rate, max(0, disponibil)],
-        hole=.4,
-        marker_colors=['#264653', '#2a9d8f', '#e9c46a', '#f4a261']
-    )])
-    fig_pie.update_layout(margin=dict(t=0, b=0, l=0, r=0), height=300)
-    st.plotly_chart(fig_pie, use_container_width=True)
-
-with c_dreapta:
-    st.write("### 📅 Evoluție Ultimele 3 Luni")
-    # Date simulate pentru istoric
-    date_istoric = pd.DataFrame({
-        'Luna': ['Decembrie', 'Ianuarie', 'Februarie', 'Martie'],
-        'Venit': [6000, 6200, 5800, venit_realizat],
-        'Cheltuieli': [4500, 4300, 4600, total_cheltuieli],
-        'Economii': [1500, 1900, 1200, disponibil]
-    })
+with tab1:
+    col_a, col_b = st.columns(2)
     
-    st.line_chart(date_istoric.set_index('Luna'))
+    with col_a:
+        st.write("### Unde se duc banii?")
+        labels = ['Locuință', 'Mâncare', 'Stil de viață', 'Transport', 'Sănătate', 'Datorii', 'Abonamente', 'Economii']
+        values = [c_chirie + c_utilitati, c_supermarket, c_oras + c_haine, c_transport, c_sanatate, c_datorii, c_abonamente, max(0, disponibil)]
+        
+        fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.5)])
+        fig.update_layout(margin=dict(t=0, b=0, l=0, r=0))
+        st.plotly_chart(fig, use_container_width=True)
 
-# --- TABEL DETALIAT ---
-st.subheader("📝 Jurnal Tranzacții")
-st.dataframe(date_istoric, use_container_width=True)
+    with col_b:
+        st.write("### Clasament Cheltuieli")
+        df_explodat = pd.DataFrame({
+            'Categorie': labels[:-1], # Fără economii
+            'Suma': values[:-1]
+        }).sort_values(by='Suma', ascending=True)
+        st.bar_chart(df_explodat.set_index('Categorie'))
 
-# Buton Salvare
-if st.button("💾 Salvează și Închide Luna"):
+with tab2:
+    st.write("### Comparare cu ultimele 3 luni")
+    # Date simulate pentru istoric (Vom lucra la salvarea lor data viitoare)
+    data_hist = {
+        'Luna': ['Decembrie', 'Ianuarie', 'Februarie', 'Martie (Curent)'],
+        'Venituri': [total_venit-500, total_venit-200, total_venit+100, total_venit],
+        'Cheltuieli': [total_cheltuieli+200, total_cheltuieli-100, total_cheltuieli+300, total_cheltuieli]
+    }
+    df_hist = pd.DataFrame(data_hist)
+    st.line_chart(df_hist.set_index('Luna'))
+
+# MESAJ DE FINAL
+if disponibil > 0:
     st.balloons()
-    st.success("Datele au fost arhivate cu succes!")
+    st.success(f"Bravo! Ai reușit să pui deoparte {(disponibil/total_venit*100):.1f}% din venituri luna aceasta.")
+else:
+    st.error("Atenție! Cheltuielile sunt mai mari decât veniturile. Verifică secțiunea 'Stil de viață'.")
